@@ -134,7 +134,7 @@ print(district_prevalence_true)
 
 ```
 
-### Creating Maps for low birth weight prevelance at the state level
+### Creating Maps for low birth weight prevelance at the state and district level
 
 ```{r}
 # Loaded state-level shapefile from GADM
@@ -143,6 +143,7 @@ india_states <- st_read("gadm41_IND_1.json")
 
 
 ```{r}
+# Loaded district-level shapefile from GADM
 india_districts <- st_read("gadm41_IND_2.json")
 head(india_districts)
 ```
@@ -154,7 +155,7 @@ unique(india_districts$NAME_2)
 
 
 ```{r}
-# Create a vector with all the district names
+# Create a vector with all the district names in NFHS
 nfhs_district_names <- c(
   "Kupwara", "Badgam", "Leh(Ladakh)", "Kargil", "Punch", "Rajouri", "Kathua", "Baramula", "Bandipore", "Srinagar", 
   "Ganderbal", "Pulwama", "Shupiyan", "Anantnag", "Kulgam", "Doda", "Ramban", "Kishtwar", "Udhampur", "Reasi", 
@@ -245,7 +246,7 @@ nfhs_district_names <- c(
   "Sambhal", "Shamli", "Sultanpur", "Paschim Barddhaman", "Purba Barddhaman"
 )
 
-# Create a vector with all the district names
+# Create a vector with all the district names in GADM
 gadm_district_names <- c(
   "NicobarIslands", "NorthandMiddleAndaman", "SouthAndaman", "Anantapur", "Chittoor",
   "EastGodavari", "Guntur", "Krishna", "Kurnool", "Nellore",
@@ -586,7 +587,6 @@ write_xlsx(india_districts_df, "updated_india_districts.xlsx")
 
 
 ```{r}
-# Assuming nfhs_district_names and india_districts are already defined and updated
 
 # Extract the updated district names from the spatial dataset
 gadm_district_names_updated <- india_districts$NAME_2
@@ -604,7 +604,6 @@ cat("Number of districts in GADM not in NFHS: ", length(gadm_not_in_nfhs), "\n")
 
 
 ```{r}
-# Optional: Print the names of the districts
 cat("Districts in NFHS not in GADM: ", nfhs_not_in_gadm, "\n")
 ```
 
@@ -619,10 +618,6 @@ length(india_districts$NAME_2)
 ```
 
 ```{r}
-# Load necessary libraries
-library(dplyr)
-library(ggplot2)
-library(sf)
 
 # Filter the spatial data for Kerala
 kerala_districts <- india_districts %>% 
