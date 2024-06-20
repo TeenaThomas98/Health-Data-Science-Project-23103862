@@ -1,15 +1,15 @@
 ---
-title: "Initial Analysisv1"
+title: "LBW"
 author: "Teena Thomas"
 date: "2024-02-22"
-output: html_document
+output: word_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Loading necessary library
+# Loading necessary library
 
 ```{r}
 library(haven)
@@ -22,128 +22,942 @@ library(survey)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(tidyverse)
-
-
 ```
 
-## Reading data
+
+# Reading data
 
 ```{r}
 data <- read_dta("IAKR7EFL.DTA")
 head (data)
-
+```
+```{r}
+length(data$m19)
 ```
 
 ```{r}
-
-unique(data$v445) # na is not applicable but what to do with flagged cases?
-
-unique(data$v155) # no missing or na values
-
-unique(data$v438)
-
+length(data$b0)
 ```
 
-
-## Reading and handling birth weight data
 
 ```{r}
-head (data$m19)
+# Load necessary library
+library(dplyr)
+
+# Filter data where b0 equals 1 and select caseid
+caseid_b0_1 <- data %>%
+  filter(b0 == 0) %>%
+  select(caseid)
+
+# View the results
+caseid_b0_1
 
 ```
 
+
+
+# Descriptive Statistics
+
+## Creating subset of data with the relevant variables
+
+```{r}
+# All the relevant variables for the analysis has been included in the data subset
+relevant_columns <- c("caseid","v005", "v021", "v022", "v023", "v024", "v012", "v130", "v131","sdist", "v437", "v438", "m18", "m19", "b4", "b0", "s220a", "v201")
+```
+
+
+
+## Checking the NA values in the subset data
+
+```{r}
+subset_data <- data %>% select(all_of(relevant_columns))
+
+# Calculate the sum of NA values in each column for the subset
+null_values_sum_subset <- colSums(is.na(subset_data))
+
+# Print the sum of null values in each column for the subset
+print("Sum of Not Applicable values in each column (subset):")
+print(null_values_sum_subset)
+```
+
+
+## Checking the special codes in the subset data
+
+```{r}
+
+# Calculate the percentage of "Don't Know" cases for m18
+m18_dk_percent <- mean(subset_data$m18 == 8, na.rm = TRUE) * 100
+cat("Percentage of 'Don't Know' cases in m18:", round(m18_dk_percent, 2), "%\n")
+
+# Calculate the percentage of "Don't Know" cases for v131
+v131_dk_percent <- mean(subset_data$v131 == 998, na.rm = TRUE) * 100
+cat("Percentage of 'Don't Know' cases in v131:", round(v131_dk_percent, 2), "%\n")
+
+
+# Calculate the percentage of special codes for v438
+v438_np_percent <- mean(subset_data$v438 == 9994, na.rm = TRUE) * 100
+v438_ref_percent <- mean(subset_data$v438 == 9995, na.rm = TRUE) * 100
+v438_oth_percent <- mean(subset_data$v438 == 9996, na.rm = TRUE) * 100
+cat("Percentage of special codes in v438:\n")
+cat("- Not Present (9994):", round(v438_np_percent, 2), "%\n")
+cat("- Refused (9995):", round(v438_ref_percent, 2), "%\n")
+cat("- Other (9996):", round(v438_oth_percent, 2), "%\n")
+
+# Calculate the percentage of special codes for v437
+v437_np_percent <- mean(subset_data$v437 == 9994, na.rm = TRUE) * 100
+v437_ref_percent <- mean(subset_data$v437 == 9995, na.rm = TRUE) * 100
+v437_oth_percent <- mean(subset_data$v437 == 9996, na.rm = TRUE) * 100
+cat("Percentage of special codes in v437:\n")
+cat("- Not Present (9994):", round(v437_np_percent, 2), "%\n")
+cat("- Refused (9995):", round(v437_ref_percent, 2), "%\n")
+cat("- Other (9996):", round(v437_oth_percent, 2), "%\n")
+```
+
+
+## Checking the birth weight data values
 
 ```{r}
 m19_counts <- data %>%
+summarise(
+count_9996 = sum(m19 == 9996, na.rm = TRUE),
+count_9998 = sum(m19 == 9998, na.rm = TRUE),
+)
+print(m19_counts)
+
+```
+
+## Cleaning the data through complete case analysis
+
+
+```{r}
+unique (subset_data$v437)
+```
+
+```{r}
+unique (subset_data$v438)
+```
+
+
+
+```{r}
+# Convert the weight values to actual kilograms
+subset_data$v437 <- subset_data$v437 / 10
+
+# Convert the height values to actual centimeters
+subset_data$v438 <- subset_data$v438 / 10
+
+# Print the first few converted weights and heights to verify
+print(head(subset_data$v437))
+print(head(subset_data$v438))
+```
+
+
+```{r}
+# Replace special codes with NA
+cleaned_data <- subset_data %>%
+  mutate(
+    m18 = na_if(m18, 8),
+    v131 = na_if(v131, 998),
+    v438 = na_if(v438, 9994),
+    v438 = na_if(v438, 9995),
+    v438 = na_if(v438, 9996),
+    v437 = na_if(v437, 9994),
+    v437 = na_if(v437, 9995),
+    v437 = na_if(v437, 9996),
+    m19 = na_if(m19, 9996),
+    m19 = na_if(m19, 9998)
+  )
+```
+
+
+```{r}
+# Verify that special codes are replaced with NA
+null_values_sum_subset <- colSums(is.na(cleaned_data))
+print("Sum of NA values in each column (subset):")
+print(null_values_sum_subset)
+```
+
+
+```{r}
+# Additional checks for percentages of NA values 
+m18_dk_percent <- mean(is.na(cleaned_data$m18)) * 100
+cat("Percentage of NA values in m18:", round(m18_dk_percent, 2), "%\n")
+
+v131_dk_percent <- mean(is.na(cleaned_data$v131)) * 100
+cat("Percentage of NA values in v131:", round(v131_dk_percent, 2), "%\n")
+
+v438_na_percent <- mean(is.na(cleaned_data$v438)) * 100
+cat("Percentage of NA values in v438:", round(v438_na_percent, 2), "%\n")
+
+v437_na_percent <- mean(is.na(cleaned_data$v437)) * 100
+cat("Percentage of NA values in v437:", round(v437_na_percent, 2), "%\n")
+
+m19_na_percent <- mean(is.na(cleaned_data$m19)) * 100
+cat("Percentage of NA values in m19:", round(m19_na_percent, 2), "%\n")
+
+```
+
+```{r}
+dataset_dimensions <- dim(cleaned_data)
+number_of_rows <- nrow(cleaned_data)
+number_of_columns <- ncol(cleaned_data)
+print(paste("Number of rows:", number_of_rows))
+print(paste("Number of columns:", number_of_columns))
+```
+
+
+```{r}
+# Define the relevant columns
+categorical_columns <- c( "v130", "v131", "m18","b4","b0")
+
+continuous_columns <- c("v012", "m19", "v437", "v438", "s220a", "v201")
+```
+
+
+
+```{r}
+continuous_summary <- cleaned_data %>%
+  select(all_of(continuous_columns)) %>%
+  summarise_all(list(mean = ~mean(., na.rm = TRUE), 
+                     median = ~median(., na.rm = TRUE), 
+                     sd = ~sd(., na.rm = TRUE)))
+
+print(continuous_summary)
+```
+
+
+```{r}
+for (col in continuous_columns) {
+  print(
+    ggplot(cleaned_data, aes_string(x = col)) +
+      geom_histogram(binwidth = 30) +
+      labs(title = paste("Histogram of", col), x = col, y = "Frequency")
+  )
+}
+```
+
+
+```{r}
+# Box plots for continuous variables by low birth weight status (assume M19 is birth weight)
+cleaned_data$LBW <- ifelse(cleaned_data$m19 < 2500, "Low Birth Weight", "Normal Birth Weight")
+
+for (col in continuous_columns) {
+  print(
+    ggplot(cleaned_data, aes_string(x = "LBW", y = col)) +
+      geom_boxplot() +
+      labs(title = paste("Box plot of", col, "by LBW status"), x = "LBW status", y = col)
+  )
+}
+```
+
+
+
+```{r}
+# Assuming b4 = 1 represents Male and b4 = 2 represents Female
+cleaned_data$sex <- ifelse(cleaned_data$b4 == 1, "Male", "Female")
+
+ggplot(cleaned_data, aes(x = factor(sex), y = m19)) +
+  geom_boxplot(fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Box Plot of Birth Weight by Sex of Child", x = "Sex of Child", y = "Birth Weight (g)")
+```
+
+
+
+```{r}
+ggplot(cleaned_data, aes(x = v012, y = m19)) +
+  geom_point(color = "blue", alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Scatter Plot of Birth Weight vs. Respondent's Age", x = "Respondent's Age", y = "Birth Weight (g)")
+
+```
+
+```{r}
+for (col in categorical_columns) {
+  if (length(unique(cleaned_data[[col]])) <= 20) {  # Only plot if unique levels are less than or equal to 20
+    print(
+      ggplot(data = as.data.frame(categorical_freq_tables[[col]]), aes(x = factor(Var1), y = Freq)) +
+        geom_bar(stat = "identity") +
+        labs(title = paste("Bar chart of", col), x = col, y = "Count") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    )
+  }
+}
+```
+
+
+
+# Design Based Approach
+
+
+```{r}
+# Filtered the 9996 and 9998 from m19 values and included only single births and filtered out twins or multiple births
+
+LBW_analysis <- cleaned_data %>%
+  filter(b0 == 0) %>%            
+  filter(!is.na(m19))            
+
+```
+
+
+
+```{r}
+m19_counts <- LBW_analysis %>%
   summarise(
-    count_9996 = sum(m19 == 9996, na.rm = TRUE),
-    count_9998 = sum(m19 == 9998, na.rm = TRUE),
     count_NA = sum(is.na(m19))
   )
 
 print(m19_counts)
 ```
 
+```{r}
+LBW_analysis
+```
+
+## SGA Analysis using GROW
+
 
 ```{r}
-unique(data$b0)
+# Load necessary libraries
+library(dplyr)
+
+
+# Coefficients
+constant <- 3455.6
+median_height <- 163
+median_weight <- 64
+ethnic_adjustment <- -149.4
+
+# Function to calculate TOW
+calculate_TOW <- function(height, weight, parity, sex) {
+  htao <- 6.7 * (height - median_height)
+  wtao <- 9.1733 * (weight - median_weight) - 0.151 * (weight - median_weight)^2 - 0.001 * (weight - median_weight)^3
+  parao <- case_when(
+    parity == 1 ~ 101.9,
+    parity == 2 ~ 133.7,
+    parity == 3 ~ 140.2,
+    parity >= 4 ~ 162.7
+  )
+  sexao <- ifelse(sex == 1, 48.9, -48.9)
+  
+  TOW <- constant + htao + wtao + ethnic_adjustment + parao + sexao
+  return(TOW)
+}
+
+# Calculate TOW for each row
+LBW_analysis <- LBW_analysis %>%
+  rowwise() %>%
+  mutate(TOW = calculate_TOW(v438, v437, v201, b4))
+```
+
+
+```{r}
+LBW_analysis
+```
+
+```{r}
+LBW_analysis <- LBW_analysis %>%
+  mutate(GA = s220a * 4.33) 
+
+LBW_analysis
 ```
 
 
 
 ```{r}
-# Filtered the 9996 and 9998 from m19 values and included only single births and filtered out twins or multiple births
-data_filtered <- data %>%
-  filter(b0 == 0) %>%
-  filter(!(m19 %in% c(9996, 9998)))
-summary(data_filtered$m19)
+# Proportionality equation to calculate GROW
+calculate_GROW <- function(TOW, GA) {
+  percentage_weight <- 298.8 - 31.85 * GA + 1.094 * GA^2 - 0.01055 * GA^3
+  GROW <- TOW * (percentage_weight / 100)
+  return(GROW)
+}
+```
+
+```{r}
+LBW_analysis <- LBW_analysis %>%
+  mutate(GROW = calculate_GROW(TOW, GA))
+
+# Display the results
+print(LBW_analysis)
+
+```
+
+```{r}
+# Calculate the 10th percentile of GROW (GROW * 0.8592)
+LBW_analysis <- LBW_analysis %>%
+  mutate(GROW_10th_percentile = GROW * 0.8592)
+
+# Label as "SGA" or "Not SGA"
+LBW_analysis <- LBW_analysis %>%
+  mutate(SGA = ifelse(m19 < GROW_10th_percentile, "SGA", "Not SGA"))
+
+```
+
+
+```{r}
+LBW_analysis
+```
+
+
+```{r}
+library(survey)
+
+# Create survey design
+survey_design <- svydesign(id = ~v021, strata = ~v022, weights = ~v005, data = LBW_analysis, nest = TRUE)
+options(survey.lonely.psu = "adjust")
+
+```
+
+
+
+```{r}
+# Calculate overall prevalence of SGA
+sga_prevalence <- svymean(~factor(SGA, levels = c("SGA", "Not SGA")), design = survey_design, na.rm = TRUE)
+
+# Extract prevalence and standard errors for SGA
+sga_prevalence_true <- coef(sga_prevalence)["factor(SGA, levels = c(\"SGA\", \"Not SGA\"))SGA"] * 100
+sga_prevalence_se <- SE(sga_prevalence)["factor(SGA, levels = c(\"SGA\", \"Not SGA\"))SGA"] * 100
+
+# Print results
+cat("Overall Prevalence of Small for Gestational Age (SGA):", round(sga_prevalence_true, 2), "%\n")
+cat("Standard Error:", round(sga_prevalence_se, 2), "%\n\n")
+
+```
+
+```{r}
+# Calculate state-level prevalence of SGA
+state_sga_prevalence <- svyby(~factor(SGA, levels = c("SGA", "Not SGA")), ~v024, design = survey_design, svymean, na.rm = TRUE)
+
+# Calculate district-level prevalence of SGA
+district_sga_prevalence <- svyby(~factor(SGA, levels = c("SGA", "Not SGA")), ~sdist, design = survey_design, svymean, na.rm = TRUE)
+```
+
+
+```{r}
+# Renaming and converting columns in state_sga_prevalence
+state_sga_prevalence <- state_sga_prevalence %>%
+  mutate(
+    `factor(SGA, levels = c("SGA", "Not SGA"))SGA` = `factor(SGA, levels = c("SGA", "Not SGA"))SGA` * 100,
+    `se.factor(SGA, levels = c("SGA", "Not SGA"))SGA` = `se.factor(SGA, levels = c("SGA", "Not SGA"))SGA` * 100
+  ) %>%
+  rename(
+    `prevalence of SGA` = `factor(SGA, levels = c("SGA", "Not SGA"))SGA`,
+    `standard error of SGA` = `se.factor(SGA, levels = c("SGA", "Not SGA"))SGA`
+  )
+
+# Renaming and converting columns in district_sga_prevalence
+district_sga_prevalence <- district_sga_prevalence %>%
+  mutate(
+    `factor(SGA, levels = c("SGA", "Not SGA"))SGA` = `factor(SGA, levels = c("SGA", "Not SGA"))SGA` * 100,
+    `se.factor(SGA, levels = c("SGA", "Not SGA"))SGA` = `se.factor(SGA, levels = c("SGA", "Not SGA"))SGA` * 100
+  ) %>%
+  rename(
+    `prevalence of SGA` = `factor(SGA, levels = c("SGA", "Not SGA"))SGA`,
+    `standard error of SGA` = `se.factor(SGA, levels = c("SGA", "Not SGA"))SGA`
+  )
+
+# Print results
+print(state_sga_prevalence)
+print(district_sga_prevalence)
+
+```
+
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(sf)
+library(ggplot2)
+library(viridis)
+library(leaflet)
+library(htmltools)
+
+# Load the state-level shapefile from GADM
+india_states <- st_read("gadm41_IND_1.json")
+
+# Check the unique state names in the shapefile
+unique_states <- unique(india_states$NAME_1)
+print(unique_states)
+
+# Create a mapping for the state names
+state_mapping <- data.frame(
+  v024 = c(1:24, 25, 25, 27:36),
+  state_name = c("JammuandKashmir", "HimachalPradesh", "Punjab", "Chandigarh", 
+                 "Uttarakhand", "Haryana", "NCTofDelhi", "Rajasthan", "UttarPradesh", 
+                 "Bihar", "Sikkim", "ArunachalPradesh", "Nagaland", "Manipur", 
+                 "Mizoram", "Tripura", "Meghalaya", "Assam", "WestBengal", "Jharkhand", 
+                 "Odisha", "Chhattisgarh", "MadhyaPradesh", "Gujarat", 
+                 "DadraandNagarHaveliandDamanandDiu", "DadraandNagarHaveliandDamanandDiu", "Maharashtra", "AndhraPradesh", 
+                 "Karnataka", "Goa", "Lakshadweep", "Kerala", "TamilNadu", 
+                 "Puducherry", "AndamanandNicobar", "Telangana"),
+  stringsAsFactors = FALSE
+)
+
+# Join this mapping to the SGA prevalence data
+state_sga_prevalence <- state_sga_prevalence %>%
+  mutate(v024 = ifelse(v024 == 25, 25, v024)) %>%
+  left_join(state_mapping, by = "v024") %>%
+  select(state_name, `prevalence of SGA`, `standard error of SGA`)
+
+# Combine Dadra and Nagar Haveli and Daman and Diu in the spatial data
+india_states <- india_states %>%
+  mutate(NAME_1 = ifelse(NAME_1 %in% c("DadraandNagarHaveli", "DamanandDiu"), "DadraandNagarHaveliandDamanandDiu", NAME_1))
+
+# Combine prevalence data for Dadra and Nagar Haveli and Daman and Diu
+state_sga_prevalence <- state_sga_prevalence %>%
+  group_by(state_name) %>%
+  summarize(prevalence = mean(`prevalence of SGA`, na.rm = TRUE), se = mean(`standard error of SGA`, na.rm = TRUE))
+
+# Join the standardized state names with the spatial data
+india_states <- india_states %>%
+  left_join(state_sga_prevalence, by = c("NAME_1" = "state_name"))
+
+# Remove Ladakh from the dataset because Ladakh is not there in the NFHS data
+india_states <- india_states %>%
+  filter(NAME_1 != "Ladakh")
+
+# Plot the map
+ggplot(india_states) +
+  geom_sf(aes(fill = prevalence)) +
+  scale_fill_viridis_c() +
+  labs(title = "SGA Prevalence by State in India",
+       fill = "Prevalence (%)") +
+  theme_minimal()
+```
+
+
+```{r}
+# Calculate the upper and lower bounds of the confidence intervals
+india_states <- india_states %>%
+  mutate(
+    lower_bound = prevalence - 1.96 * se,
+    upper_bound = prevalence + 1.96 * se
+  )
+
+# Create labels with HTML formatting
+india_states$label <- paste0(
+  "State: <strong>", india_states$NAME_1, "</strong><br>",
+  "Prevalence: <strong>", round(india_states$prevalence, 2), "%</strong><br>",
+  "95% CI: <strong>", round(india_states$lower_bound, 2), "% - ", round(india_states$upper_bound, 2), "%</strong>"
+)
+
+# Wrap label content with HTML function
+india_states$label <- lapply(india_states$label, htmltools::HTML)
+
+# Plot the interactive map
+leaflet(india_states) %>%
+  addTiles() %>%
+  addPolygons(
+    fillColor = ~colorQuantile("Viridis", prevalence)(prevalence),
+    weight = 1,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    label = ~label,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto"
+    ),
+    highlightOptions = highlightOptions(
+      color = "white",
+      weight = 2,
+      bringToFront = TRUE
+    )
+  )
+
+```
+
+
+## SGA Analysis using INTERGROWTH
+
+
+```{r}
+library(readxl)
+library(writexl)
+library(dplyr)
+
+# Convert gestational age from months to weeks and days
+LBW_analysis <- LBW_analysis %>%
+  mutate(
+    GA_weeks = floor(GA),    # Extract whole weeks
+    GA_days = round((GA - GA_weeks) * 7),  # Convert remaining fraction to days
+    Gestational_age = paste(GA_weeks, GA_days, sep = "+")  # Format as "weeks+days"
+  )
+```
+
+```{r}
+LBW_analysis
+```
+
+
+
+```{r}
+# Read the Excel template
+excel_template <- read_excel("Intergrowth.xlsx", sheet = 1)
+```
+```{r}
+# Prepare the data frame to match the Excel template
+
+excel_data <- data.frame(
+  `ID` = LBW_analysis$caseid,
+  `Gestational age (weeks+days)` = LBW_analysis$Gestational_age,
+  `EFW (g)` = LBW_analysis$m19,
+  `v005` = LBW_analysis$v005,
+  `v021` = LBW_analysis$v021,
+  `v022` = LBW_analysis$v022,
+  `v023` = LBW_analysis$v023,
+  `v024` = LBW_analysis$v024,
+  `v012` = LBW_analysis$v012,
+  `v130` = LBW_analysis$v130,
+  `v131` = LBW_analysis$v131,
+  `sdist` = LBW_analysis$sdist,
+  `v437` = LBW_analysis$v437,
+  `v438` = LBW_analysis$v438,
+  `m18` = LBW_analysis$m18,
+  `m19` = LBW_analysis$m19,
+  `b4` = LBW_analysis$b4,
+  `b0` = LBW_analysis$b0,
+  `s220a` = LBW_analysis$s220a,
+  `v201` = LBW_analysis$v201,
+  `TOW` = LBW_analysis$TOW,
+  `GROW` = LBW_analysis$GROW,
+  `GROW_10th_percentile` = LBW_analysis$GROW_10th_percentile,
+  `GROW_SGA` = LBW_analysis$SGA
+)
+
+
+# Assuming the template starts at row 2 (row 1 being the header)
+# Adjust the row number if your template structure is different
+start_row <- 4
+
+# Write the data to the Excel template
+write_xlsx(excel_data, "Intergrowth_Updates.xlsx")
+
+```
+
+
+```{r}
+# Load necessary libraries
+library(readxl)
+library(dplyr)
+
+# Read the Excel file
+intergrowth_data <- read_excel("Intergrowth_SGA.xlsx")
+
+# Calculate SGA status
+intergrowth_data <- intergrowth_data %>%
+  mutate(Intergrowth_SGA = ifelse(centile < 10, "SGA", "Not SGA"))
+
+# View the updated data with SGA status
+print(intergrowth_data)
+
+# Save the updated data to a new Excel file
+write_xlsx(intergrowth_data, "Intergrowth_results_with_SGA.xlsx")
+
+```
+
+
+```{r}
+intergrowth_data <- read_excel("Intergrowth_results_with_SGA.xlsx", sheet = 1)
+```
+
+```{r}
+intergrowth_data
+```
+
+
+```{r}
+
+# Create survey design
+survey_design <- svydesign(id = ~v021, strata = ~v022, weights = ~v005, data = intergrowth_data, nest = TRUE)
+options(survey.lonely.psu = "adjust")
+
+# Calculate overall prevalence of SGA
+Intergrowth_sga_prevalence <- svymean(~factor(Intergrowth_SGA, levels = c("SGA", "Not SGA")), design = survey_design, na.rm = TRUE)
+
+# Extract prevalence and standard errors for SGA
+Intergrowth_sga_prevalence_true <- coef(Intergrowth_sga_prevalence)["factor(Intergrowth_SGA, levels = c(\"SGA\", \"Not SGA\"))SGA"] * 100
+Intergrowth_sga_prevalence_se <- SE(Intergrowth_sga_prevalence)["factor(Intergrowth_SGA, levels = c(\"SGA\", \"Not SGA\"))SGA"] * 100
+
+# Print results
+cat("Overall Prevalence of Small for Gestational Age (SGA):", round(Intergrowth_sga_prevalence_true, 2), "%\n")
+cat("Standard Error:", round(Intergrowth_sga_prevalence_se, 2), "%\n\n")
+```
+
+```{r}
+# Calculate state-level prevalence of Intergrowth SGA
+state_intergrowth_sga_prevalence <- svyby(~factor(Intergrowth_SGA, levels = c("SGA", "Not SGA")), ~v024, design = survey_design, svymean, na.rm = TRUE)
+
+# Renaming and converting columns in state_intergrowth_sga_prevalence
+state_intergrowth_sga_prevalence <- state_intergrowth_sga_prevalence %>%
+  mutate(
+    `factor(Intergrowth_SGA, levels = c("SGA", "Not SGA"))SGA` = `factor(Intergrowth_SGA, levels = c("SGA", "Not SGA"))SGA` * 100,
+    `se.factor(Intergrowth_SGA, levels = c("SGA", "Not SGA"))SGA` = `se.factor(Intergrowth_SGA, levels = c("SGA", "Not SGA"))SGA` * 100
+  ) %>%
+  rename(
+    `prevalence of SGA` = `factor(Intergrowth_SGA, levels = c("SGA", "Not SGA"))SGA`,
+    `standard error of SGA` = `se.factor(Intergrowth_SGA, levels = c("SGA", "Not SGA"))SGA`
+  )
+
+
+
+# Calculate district-level prevalence of SGA
+district_intergrowth_sga_prevalence <- svyby(~factor(Intergrowth_SGA, levels = c("SGA", "Not SGA")), ~sdist, design = survey_design, svymean, na.rm = TRUE)
+
+
+# Renaming and converting columns in district_sga_prevalence
+district_intergrowth_sga_prevalence <- district_intergrowth_sga_prevalence %>%
+  mutate(
+    `factor(Intergrowth_SGA, levels = c("SGA", "Not SGA"))SGA` = `factor(Intergrowth_SGA, levels = c("SGA", "Not SGA"))SGA` * 100,
+    `se.factor(Intergrowth_SGA, levels = c("SGA", "Not SGA"))SGA` = `se.factor(Intergrowth_SGA, levels = c("SGA", "Not SGA"))SGA` * 100
+  ) %>%
+  rename(
+    `prevalence of SGA` = `factor(Intergrowth_SGA, levels = c("SGA", "Not SGA"))SGA`,
+    `standard error of SGA` = `se.factor(Intergrowth_SGA, levels = c("SGA", "Not SGA"))SGA`
+  )
+
+# Print results
+print(state_intergrowth_sga_prevalence)
+print(district_intergrowth_sga_prevalence)
+
+```
+
+
+```{r}
+# Join this mapping to the SGA prevalence data
+state_intergrowth_sga_prevalence <- state_intergrowth_sga_prevalence %>%
+  mutate(v024 = ifelse(v024 == 25, 25, v024)) %>%
+  left_join(state_mapping, by = "v024") %>%
+  select(state_name, `prevalence of SGA`, `standard error of SGA`)
+
+# Combine Dadra and Nagar Haveli and Daman and Diu in the spatial data
+india_states <- india_states %>%
+  mutate(NAME_1 = ifelse(NAME_1 %in% c("DadraandNagarHaveli", "DamanandDiu"), "DadraandNagarHaveliandDamanandDiu", NAME_1))
+
+# Combine prevalence data for Dadra and Nagar Haveli and Daman and Diu
+state_intergrowth_sga_prevalence <- state_intergrowth_sga_prevalence %>%
+  group_by(state_name) %>%
+  summarize(prevalence = mean(`prevalence of SGA`, na.rm = TRUE), se = mean(`standard error of SGA`, na.rm = TRUE))
+
+# Join the standardized state names with the spatial data
+india_states <- india_states %>%
+  left_join(state_intergrowth_sga_prevalence, by = c("NAME_1" = "state_name"))
+
+# Remove Ladakh from the dataset because Ladakh is not there in the NFHS data
+india_states <- india_states %>%
+  filter(NAME_1 != "Ladakh")
+```
+
+
+```{r}
+# Plot the map
+ggplot(india_states) +
+  geom_sf(aes(fill = prevalence)) +
+  scale_fill_viridis_c() +
+  labs(title = "SGA Prevalence by State in India (Intergrowth)",
+       fill = "Prevalence (%)") +
+  theme_minimal()
 ```
 
 
 
 
-## Creating the data subset with relevant variables
+## Creating the survey design for the calculation of Low Birth Weight
+
 
 
 ```{r}
-# All the relevant variables for the analysis has been included in the data subset
-relevant_vars <- c("v005", "v021", "v022", "v023", "v024", "v012", "v106", "v130", "v131","sdist", 
-                   "v190", "v437", "v438", "v445", "v155", "v501", "v228", "v463z", "v716", 
-                   "v025", "v101", "v113", "v116", "v127", "v161", "m1", "m14", "m42a", "m42c", "m42d", "m42e", "m2a", "m2b",
-                   "m2g", "m2h", "m2i", "m2j", "m2k", "m2n", "m3a", "m3b", "m3c", "m3h",  "m3k",
-                   "m3n", "m43", "m44", "m45", "m46", "m15", "m17", "m18","m19", "b4", "s220a", "v201", "b11", "b0", "b2")
-
-data_subset <- data_filtered %>%
-  select(all_of(relevant_vars))
-
-# Then I created a survey design object
-survey_design <- svydesign(id = ~v021, strata = ~v022, weights = ~v005, data = data_subset, nest = TRUE)
+# Create survey design
+survey_design <- svydesign(id = ~v021, strata = ~v022, weights = ~v005, data = LBW_analysis, nest = TRUE)
 
 options(survey.lonely.psu = "adjust")
 
-# To calculate the prevalence of low birth weight (less than 2500 grams)
+# Calculate overall prevalence of low birth weight (less than 2500 grams)
 low_birth_weight <- svymean(~I(m19 < 2500), design = survey_design, na.rm = TRUE)
-```
 
+# Extract prevalence and standard errors
+low_birth_weight_true <- coef(low_birth_weight)["I(m19 < 2500)TRUE"] * 100
+low_birth_weight_se <- SE(low_birth_weight)["I(m19 < 2500)TRUE"] * 100
+```
 
 
 ```{r}
-# Extracted only the values of prevalence and their standard errors of low birth weight
-low_birth_weight_true <- coef(low_birth_weight)["I(m19 < 2500)TRUE"] * 100
-low_birth_weight_se <- SE(low_birth_weight)["I(m19 < 2500)TRUE"] * 100
+# Calculate state-level prevalence of low birth weight
+state_prevalence_true <- svyby(~I(m19 < 2500), ~v024, design = survey_design, svymean, na.rm = TRUE)
 
-state_prevalence_true <- prevalence_by_state %>%
-  select(v024, `I(m19 < 2500)TRUE`, `se.I(m19 < 2500)TRUE`) %>%
-  mutate(`I(m19 < 2500)TRUE` = `I(m19 < 2500)TRUE` * 100,
-         `se.I(m19 < 2500)TRUE` = `se.I(m19 < 2500)TRUE` * 100)
+# Calculate district-level prevalence of low birth weight
+district_prevalence_true <- svyby(~I(m19 < 2500), ~sdist, design = survey_design, svymean, na.rm = TRUE)
+```
 
-district_prevalence_true <- prevalence_by_district %>%
-  select(sdist, `I(m19 < 2500)TRUE`, `se.I(m19 < 2500)TRUE`) %>%
-  mutate(`I(m19 < 2500)TRUE` = `I(m19 < 2500)TRUE` * 100,
-         `se.I(m19 < 2500)TRUE` = `se.I(m19 < 2500)TRUE` * 100)
 
-# Print results
-cat("Overall Prevalence of Low Birth Weight (LBW):", round(low_birth_weight_true, 2), "%\n")
-cat("Standard Error:", round(low_birth_weight_se, 2), "%\n\n")
+```{r}
+state_prevalence_true
+district_prevalence_true
+```
 
-cat("Prevalence by State:\n")
-print(state_prevalence_true)
 
-cat("\nPrevalence by District:\n")
-print(district_prevalence_true)
+```{r}
+# Convert proportions to percentages in state_prevalence_true
+state_prevalence_true <- state_prevalence_true %>%
+  mutate(
+    `I(m19 < 2500)FALSE` = `I(m19 < 2500)FALSE` * 100,
+    `I(m19 < 2500)TRUE` = `I(m19 < 2500)TRUE` * 100,
+    `se.I(m19 < 2500)FALSE` = `se.I(m19 < 2500)FALSE` * 100,
+    `se.I(m19 < 2500)TRUE` = `se.I(m19 < 2500)TRUE` * 100
+  )
+
+# Convert proportions to percentages in district_prevalence_true
+district_prevalence_true <- district_prevalence_true %>%
+  mutate(
+    `I(m19 < 2500)FALSE` = `I(m19 < 2500)FALSE` * 100,
+    `I(m19 < 2500)TRUE` = `I(m19 < 2500)TRUE` * 100,
+    `se.I(m19 < 2500)FALSE` = `se.I(m19 < 2500)FALSE` * 100,
+    `se.I(m19 < 2500)TRUE` = `se.I(m19 < 2500)TRUE` * 100
+  )
 
 ```
 
-### Creating Maps for low birth weight prevelance at the state and district level
+
+```{r}
+state_prevalence_true
+district_prevalence_true
+```
+
+
+```{r}
+# Print results
+cat("Overall Prevalence of Low Birth Weight (LBW):", round(low_birth_weight_true, 2), "%\n")
+cat("Standard Error:", round(low_birth_weight_se, 2), "%\n\n")
+```
+
+
+
+
+## Creating Maps for low birth weight prevelance at the state level
 
 ```{r}
 # Loaded state-level shapefile from GADM
 india_states <- st_read("gadm41_IND_1.json")
 ```
 
+```{r}
+unique_states <- unique(india_states$NAME_1)
+print(unique_states)
+```
+
 
 ```{r}
-# Loaded district-level shapefile from GADM
+# Created a mapping for the state names
+state_mapping <- data.frame(
+  v024 = c(1:24, 25, 25, 27:36),
+  state_name = c("JammuandKashmir", "HimachalPradesh", "Punjab", "Chandigarh", 
+                 "Uttarakhand", "Haryana", "NCTofDelhi", "Rajasthan", "UttarPradesh", 
+                 "Bihar", "Sikkim", "ArunachalPradesh", "Nagaland", "Manipur", 
+                 "Mizoram", "Tripura", "Meghalaya", "Assam", "WestBengal", "Jharkhand", 
+                 "Odisha", "Chhattisgarh", "MadhyaPradesh", "Gujarat", 
+                 "DadraandNagarHaveliandDamanandDiu", "DadraandNagarHaveliandDamanandDiu", "Maharashtra", "AndhraPradesh", 
+                 "Karnataka", "Goa", "Lakshadweep", "Kerala", "TamilNadu", 
+                 "Puducherry", "AndamanandNicobar", "Telangana"),
+  stringsAsFactors = FALSE
+)
+
+# Combining Dadra and Nagar Haveli and Daman and Diu in the prevalence data because this is mentioned as one state in the NFHS dataset and as seperate in the GADM file
+state_prevalence_true <- state_prevalence_true %>%
+  mutate(v024 = ifelse(v024 == 25, 25, v024))
+
+# Join this mapping to the prevalence_by_state data
+state_prevalence_true <- state_prevalence_true %>%
+  left_join(state_mapping, by = "v024") %>%
+  select(state_name, `I(m19 < 2500)TRUE`, `se.I(m19 < 2500)TRUE`) %>%
+  rename(prevalence = `I(m19 < 2500)TRUE`, se = `se.I(m19 < 2500)TRUE`)
+
+# Combined Dadra and Nagar Haveli and Daman and Diu in the spatial data
+india_states <- india_states %>%
+  mutate(NAME_1 = ifelse(NAME_1 %in% c("DadraandNagarHaveli", "DamanandDiu"), "DadraandNagarHaveliandDamanandDiu", NAME_1))
+
+# Combine prevalence data for Dadra and Nagar Haveli and Daman and Diu
+state_prevalence_true <- state_prevalence_true %>%
+  group_by(state_name) %>%
+  summarize(prevalence = mean(prevalence, na.rm = TRUE), se = mean(se, na.rm = TRUE))
+
+# Join the standardized state names with the spatial data
+india_states <- india_states %>%
+  left_join(state_prevalence_true, by = c("NAME_1" = "state_name"))
+
+# Removed Ladakh from the dataset because Ladakh is not there in the NFHS data
+india_states <- india_states %>%
+  filter(NAME_1 != "Ladakh")
+
+
+# Plot the map
+ggplot(india_states) +
+  geom_sf(aes(fill = prevalence)) +
+  scale_fill_viridis_c() +
+  labs(title = "Low Birth Weight Prevalence by State in India",
+       fill = "Prevalence (%)") +
+  theme_minimal()
+
+
+```
+
+
+
+```{r}
+# Calculate the upper and lower bounds of the confidence intervals
+india_states <- india_states %>%
+mutate(
+lower_bound = prevalence - 1.96 * se,
+upper_bound = prevalence + 1.96 * se
+)
+```
+
+
+
+```{r}
+library(leaflet)
+library(htmltools)
+
+
+# Create labels with HTML formatting
+india_states$label <- paste0(
+  "State: <strong>", india_states$NAME_1, "</strong><br>",
+  "Prevalence: <strong>", round(india_states$prevalence, 2), "%</strong><br>",
+  "95% CI: <strong>", round(india_states$lower_bound, 2), "% - ", round(india_states$upper_bound, 2), "%</strong>"
+)
+
+# Wrap label content with HTML function
+india_states$label <- lapply(india_states$label, htmltools::HTML)
+
+
+leaflet(india_states) %>%
+addTiles() %>%
+addPolygons(
+fillColor = ~colorQuantile("Viridis", prevalence)(prevalence),
+weight = 1,
+opacity = 1,
+color = "white",
+dashArray = "3",
+fillOpacity = 0.7,
+label = ~label,
+labelOptions = labelOptions(
+style = list("font-weight" = "normal", padding = "3px 8px"),
+textsize = "15px",
+direction = "auto"
+),
+highlightOptions = highlightOptions(
+color = "white",
+weight = 2,
+bringToFront = TRUE
+)
+)
+```
+
+
+
+## Creating Maps for low birth weight prevelance at the district level
+
+```{r}
 india_districts <- st_read("gadm41_IND_2.json")
 head(india_districts)
 ```
@@ -155,7 +969,7 @@ unique(india_districts$NAME_2)
 
 
 ```{r}
-# Create a vector with all the district names in NFHS
+# Create a vector with all the district names
 nfhs_district_names <- c(
   "Kupwara", "Badgam", "Leh(Ladakh)", "Kargil", "Punch", "Rajouri", "Kathua", "Baramula", "Bandipore", "Srinagar", 
   "Ganderbal", "Pulwama", "Shupiyan", "Anantnag", "Kulgam", "Doda", "Ramban", "Kishtwar", "Udhampur", "Reasi", 
@@ -246,7 +1060,7 @@ nfhs_district_names <- c(
   "Sambhal", "Shamli", "Sultanpur", "Paschim Barddhaman", "Purba Barddhaman"
 )
 
-# Create a vector with all the district names in GADM
+# Create a vector with all the district names
 gadm_district_names <- c(
   "NicobarIslands", "NorthandMiddleAndaman", "SouthAndaman", "Anantapur", "Chittoor",
   "EastGodavari", "Guntur", "Krishna", "Kurnool", "Nellore",
@@ -389,8 +1203,10 @@ gadm_district_names <- c(
 # Compare the vectors
 same_length <- length(nfhs_district_names) == length(gadm_district_names)
 same_length
+```
 
 
+```{r}
 common_districts <- intersect(nfhs_district_names, gadm_district_names)
 
 # Print the common districts
@@ -411,14 +1227,12 @@ cat("Number of districts in GADM not in NFHS: ", length(gadm_not_in_nfhs), "\n")
 
 
 ```{r}
-# Install and load the stringdist package
 
 library(stringdist)
 
-
 # Perform fuzzy matching with a threshold for string similarity
 fuzzy_matches <- sapply(nfhs_not_in_gadm, function(x) {
-  match <- amatch(x, gadm_not_in_nfhs, maxDist = 2) # Adjust maxDist as needed
+  match <- amatch(x, gadm_not_in_nfhs, maxDist = 2) 
   if (!is.na(match)) {
     return(c(NFHS = x, GADM = gadm_not_in_nfhs[match]))
   } else {
@@ -568,6 +1382,8 @@ print("Updated NAME_2 column:")
 print(india_districts$NAME_2)
 
 ```
+
+
 ```{r}
 # Load the writexl package
 library(writexl)
@@ -578,11 +1394,6 @@ india_districts_df <- as.data.frame(india_districts)
 # Write the data frame to an Excel file
 write_xlsx(india_districts_df, "updated_india_districts.xlsx")
 ```
-
-
-
-
-
 
 
 
@@ -604,6 +1415,7 @@ cat("Number of districts in GADM not in NFHS: ", length(gadm_not_in_nfhs), "\n")
 
 
 ```{r}
+# Print the names of the districts
 cat("Districts in NFHS not in GADM: ", nfhs_not_in_gadm, "\n")
 ```
 
@@ -617,7 +1429,12 @@ cat("Districts in GADM not in NFHS: ", gadm_not_in_nfhs, "\n")
 length(india_districts$NAME_2)
 ```
 
+
 ```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(sf)
 
 # Filter the spatial data for Kerala
 kerala_districts <- india_districts %>% 
@@ -790,7 +1607,6 @@ ggplot(goa_districts) +
 ```
 
 ```{r}
-
 
 # Filter the spatial data for West Bengal
 west_bengal_districts <- india_districts %>% 
@@ -978,76 +1794,6 @@ ggplot(lakshadweep_districts) +
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-```{r}
-unique_states <- unique(india_states$NAME_1)
-print(unique_states)
-```
-
-
-
-```{r}
-# Created a mapping for the state names
-state_mapping <- data.frame(
-  v024 = c(1:24, 25, 25, 27:36),
-  state_name = c("JammuandKashmir", "HimachalPradesh", "Punjab", "Chandigarh", 
-                 "Uttarakhand", "Haryana", "NCTofDelhi", "Rajasthan", "UttarPradesh", 
-                 "Bihar", "Sikkim", "ArunachalPradesh", "Nagaland", "Manipur", 
-                 "Mizoram", "Tripura", "Meghalaya", "Assam", "WestBengal", "Jharkhand", 
-                 "Odisha", "Chhattisgarh", "MadhyaPradesh", "Gujarat", 
-                 "DadraandNagarHaveliandDamanandDiu", "DadraandNagarHaveliandDamanandDiu", "Maharashtra", "AndhraPradesh", 
-                 "Karnataka", "Goa", "Lakshadweep", "Kerala", "TamilNadu", 
-                 "Puducherry", "AndamanandNicobar", "Telangana"),
-  stringsAsFactors = FALSE
-)
-
-# Combining Dadra and Nagar Haveli and Daman and Diu in the prevalence data because this is mentioned as one state in the NFHS dataset and as seperate in the GADM file
-state_prevalence_true <- state_prevalence_true %>%
-  mutate(v024 = ifelse(v024 == 25, 25, v024))
-
-# Join this mapping to the prevalence_by_state data
-state_prevalence_true <- state_prevalence_true %>%
-  left_join(state_mapping, by = "v024") %>%
-  select(state_name, `I(m19 < 2500)TRUE`, `se.I(m19 < 2500)TRUE`) %>%
-  rename(prevalence = `I(m19 < 2500)TRUE`, se = `se.I(m19 < 2500)TRUE`)
-
-# Combined Dadra and Nagar Haveli and Daman and Diu in the spatial data
-india_states <- india_states %>%
-  mutate(NAME_1 = ifelse(NAME_1 %in% c("DadraandNagarHaveli", "DamanandDiu"), "DadraandNagarHaveliandDamanandDiu", NAME_1))
-
-# Combine prevalence data for Dadra and Nagar Haveli and Daman and Diu
-state_prevalence_true <- state_prevalence_true %>%
-  group_by(state_name) %>%
-  summarize(prevalence = mean(prevalence, na.rm = TRUE), se = mean(se, na.rm = TRUE))
-
-# Join the standardized state names with the spatial data
-india_states <- india_states %>%
-  left_join(state_prevalence_true, by = c("NAME_1" = "state_name"))
-
-# Removed Ladakh from the dataset because Ladakh is not there in the NFHS data
-india_states <- india_states %>%
-  filter(NAME_1 != "Ladakh")
-
-# Plot the map
-ggplot(india_states) +
-  geom_sf(aes(fill = prevalence)) +
-  scale_fill_viridis_c() +
-  labs(title = "Low Birth Weight Prevalence by State in India",
-       fill = "Prevalence (%)") +
-  theme_minimal()
-
-
-```
 
 
 
