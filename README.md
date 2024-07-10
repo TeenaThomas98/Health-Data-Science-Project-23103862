@@ -1,8 +1,8 @@
 # Health-Data-Science-Project-23103862
-"Estimating the Prevalence of Low Birth Weight in India at District Level Using Design-Based and Model-Based Approaches: A Secondary Data Analysis of NFHS-5 Data"
+"Estimating and Visualizing Prevalence of Small Vulnerable Babies in India Using Data from a Complex Survey Design: A Secondary Data Analysis of NFHS-5 Data"
 
 # AIM
-The aim of this study is to estimate the prevalence of LBW at the district level for all 707 districts in India, utilizing design based and model-based approaches 
+The aim of this study is to estimate and visualize the prevalence of small vulnerable babies for all 707 districts in India utilizing design based and model-based approaches 
 
 # BACKGROUND 
 
