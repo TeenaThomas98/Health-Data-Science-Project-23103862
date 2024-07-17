@@ -1,5 +1,5 @@
 ---
-title: "LBW"
+title: "Analysis to find out the prevelance of SGA and LBW"
 author: "Teena Thomas"
 date: "2024-02-22"
 output: word_document
@@ -46,7 +46,10 @@ relevant_columns <- c("caseid","v005", "v021", "v022", "v023", "v024", "v012", "
 
 ## Checking the NA values in the subset data
 
+
+
 ```{r}
+# Creating subset of data with the relevant variables
 subset_data <- data %>% select(all_of(relevant_columns))
 
 # Calculate the sum of NA values in each column for the subset
@@ -192,15 +195,6 @@ percent_missing_covariates <- (babies_with_missing_covariates / total_babies) * 
 cat("Percentage of babies with at least one missing maternal covariate:", round(percent_missing_covariates, 2), "%\n")
 
 ```
-
-
-
-
-
-
-
-
-
 
 ```{r}
 # Load the required libraries
@@ -571,12 +565,9 @@ print(district_sga_prevalence)
 
 
 ```{r}
+library(writexl)
 write_xlsx(district_sga_prevalence, path = "GROW_district_sga_prevalence.xlsx")
 ```
-
-
-
-
 
 ```{r}
 # Load necessary libraries
@@ -634,14 +625,21 @@ india_states <- india_states %>%
 # Plot the map
 ggplot(india_states) +
   geom_sf(aes(fill = prevalence)) +
-  scale_fill_viridis_c() +
-  labs(title = "SGA Prevalence by State in India",
+  scale_fill_viridis_c(option = "plasma", name = "Prevalence (%)", direction = -1, limits = c(0, 60)) +
+  labs(title = "Prevalence of Small for Gestational Age by State in India",
+       subtitle = "Based on GROW Standard",
        fill = "Prevalence (%)") +
-  theme_minimal()
+  theme_minimal() 
+
 ```
 
 
 ```{r}
+library(leaflet)
+library(dplyr)
+library(htmltools)
+library(htmlwidgets)
+
 # Calculate the upper and lower bounds of the confidence intervals
 india_states <- india_states %>%
   mutate(
@@ -659,8 +657,12 @@ india_states$label <- paste0(
 # Wrap label content with HTML function
 india_states$label <- lapply(india_states$label, htmltools::HTML)
 
+# Define the HTML for title and subtitle
+map_title <- tags$h3("Prevalence of Small for Gestational Age in India")
+map_subtitle <- tags$p("Based on GROW Standard")
+
 # Plot the interactive map
-leaflet(india_states) %>%
+map_GROW <- leaflet(india_states) %>%
   addTiles() %>%
   addPolygons(
     fillColor = ~colorQuantile("Viridis", prevalence)(prevalence),
@@ -679,12 +681,24 @@ leaflet(india_states) %>%
       color = "white",
       weight = 2,
       bringToFront = TRUE
+    ),
+    options = leafletOptions(
+      title = map_title,  # Add title
+      subtitle = map_subtitle  # Add subtitle
     )
   )
 
+ 
+
+# Print the map to view it in the RStudio viewer
+print(map_GROW)
+
+# Save the map as an HTML file
+saveWidget(map_GROW, file = "India_sga_grow_prevalence_map.html")
+
 ```
 
-
+ed
 
 ## SGA Analysis using INTERGROWTH
 
@@ -881,13 +895,14 @@ india_states <- india_states %>%
 # Plot the map
 ggplot(india_states) +
   geom_sf(aes(fill = prevalence.y)) +
-  scale_fill_viridis_c() +
+  scale_fill_viridis_c(option = "plasma", name = "Prevalence (%)", direction = -1, limits = c(0, 60)) +
   labs(
     title = "Prevalence of Small for Gestational Age (SGA) by State in India",
     subtitle = "Based on INTERGROWTH-21st Standard",
     fill = "Prevalence (%)"
   ) +
   theme_minimal()
+
 ```
 
 ```{r}
@@ -910,7 +925,7 @@ india_states$label_intergrowth <- paste0(
 india_states$label_intergrowth <- lapply(india_states$label_intergrowth, htmltools::HTML)
 
 # Plot the interactive map for INTERGROWTH data
-leaflet(india_states) %>%
+map_INTR <- leaflet(india_states) %>%
   addTiles() %>%
   addPolygons(
     fillColor = ~colorQuantile("Viridis", prevalence.y)(prevalence.y),
@@ -938,6 +953,13 @@ leaflet(india_states) %>%
     title = "Prevalence (%)",
     position = "bottomright"
   )
+
+# Print the map to view it in the RStudio viewer
+print(map_INTR)
+
+# Save the map as an HTML file
+saveWidget(map_INTR, file = "India_sga_Intr_prevalence_map.html")
+
 
 ```
 
@@ -1092,11 +1114,10 @@ india_states <- india_states %>%
 # Plot the map
 ggplot(india_states) +
   geom_sf(aes(fill = prevalence)) +
-  scale_fill_viridis_c() +
+  scale_fill_viridis_c(option = "plasma", name = "Prevalence (%)", direction = -1, limits = c(0, 60)) +
   labs(title = "Low Birth Weight Prevalence by State in India",
        fill = "Prevalence (%)") +
   theme_minimal()
-
 
 ```
 
@@ -1129,7 +1150,7 @@ india_states$label <- paste0(
 india_states$label <- lapply(india_states$label, htmltools::HTML)
 
 
-leaflet(india_states) %>%
+map_lbw <- leaflet(india_states) %>%
 addTiles() %>%
 addPolygons(
 fillColor = ~colorQuantile("Viridis", prevalence)(prevalence),
@@ -1150,6 +1171,12 @@ weight = 2,
 bringToFront = TRUE
 )
 )
+
+# Print the map to view it in the RStudio viewer
+print(map_lbw )
+
+# Save the map as an HTML file
+saveWidget(map_lbw , file = "India_LBW_prevalence_map.html")
 ```
 
 
