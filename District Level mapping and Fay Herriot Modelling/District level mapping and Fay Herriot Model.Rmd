@@ -5,7 +5,6 @@ date: "2024-02-22"
 output: word_document
 ---
 
-
 ## Cleaning the district shape file to match the district names between the json file and NFHS 
 
 
@@ -484,10 +483,6 @@ print(unique_sdist_count)
 ```
 
 
-
-
-
-
 ```{r}
 # Perform the merge using left_join (can use inner_join, right_join, full_join as needed)
 districts_GROW<- left_join(districts, data, by = "sdist")
@@ -708,7 +703,7 @@ state_names <- unique(cleaned_data_merged$NAME_1)
 # Create interactive maps for all states
 for (state in state_names) {
   map <- create_interactive_state_map(state, cleaned_data_merged)
-  saveWidget(map, paste0(state, "_SGA_map.html"), selfcontained = TRUE)
+  saveWidget(map, paste0(state, "Statelevel_SGA_GROW_map.html"), selfcontained = TRUE)
 }
 
 ```
@@ -724,10 +719,10 @@ create_state_map <- function(state_name, cleaned_data_merged) {
   
   # Create the map
   ggplot() +
-    geom_sf(data = state_data, aes(fill = `prevalence of SGA`), color = "white", size = 0.1) +
-    scale_fill_viridis(option = "plasma", name = "SGA Prevalence (%)", 
+    geom_sf(data = state_data, aes(fill = `prevalence of SGA`), color = NA, size = 0.1) +
+    scale_fill_viridis(option = "plasma", name = "SGA Prevalence (%)", direction = -1,
                        na.value = "grey50",
-                       guide = guide_colorbar(barwidth = 15, barheight = 0.5)) +
+                       guide = guide_colorbar(barwidth = 15, barheight = 0.5), limits = c(0, 60)) +
     labs(title = paste("Prevalence of Small for Gestational Age (SGA) in", state_name),
          subtitle = "Based on GROW Standard") +
     theme_minimal() +
@@ -1094,10 +1089,10 @@ create_state_map <- function(state_name, cleaned_data_merged) {
   
   # Create the map
   ggplot() +
-    geom_sf(data = state_data, aes(fill = prevalence_of_SGA), color = "white", size = 0.1) +
-    scale_fill_viridis(option = "plasma", name = "SGA Prevalence (%)", 
+    geom_sf(data = state_data, aes(fill = prevalence_of_SGA), color = NA, size = 0.1) +
+    scale_fill_viridis(option = "plasma", name = "SGA Prevalence (%)", direction = -1,
                        na.value = "grey50",
-                       guide = guide_colorbar(barwidth = 15, barheight = 0.5)) +
+                       guide = guide_colorbar(barwidth = 15, barheight = 0.5), limits = c(0, 70)) +
     labs(title = paste("Prevalence of Small for Gestational Age (SGA) in", state_name),
          subtitle = "Based on INTERGROWTH-21st Standard") +
     theme_minimal() +
@@ -1271,20 +1266,12 @@ state_names <- unique(cleaned_data_merged$NAME_1)
 # Create interactive maps for all states
 for (state in state_names) {
   map <- create_interactive_state_map(state, cleaned_data_merged)
-  saveWidget(map, paste0(state, "INTERGROWTH_SGA_map.html"), selfcontained = TRUE)
+  saveWidget(map, paste0(state, "INTERGROWTH_SGA_state_level_map.html"), selfcontained = TRUE)
 }
 
 
 
 ```
-
-
-
-
-
-
-
-
 
 
 
@@ -1768,19 +1755,12 @@ state_names <- unique(cleaned_data_merged$NAME_1)
 # Create interactive maps for all states
 for (state in state_names) {
   map <- create_interactive_state_map(state, cleaned_data_merged)
-  saveWidget(map, paste0(state, "LBW_SGA_map.html"), selfcontained = TRUE)
+  saveWidget(map, paste0(state, "LBW_district_map.html"), selfcontained = TRUE)
 }
 
 
 
 ```
-
-
-
-
-
-
-
 
 
 
@@ -1854,10 +1834,10 @@ create_state_map <- function(state_name, cleaned_data_merged) {
   
   # Create the map
   ggplot() +
-    geom_sf(data = state_data, aes(fill = COLUMN2), color = "white", size = 0.1) +
-    scale_fill_viridis(option = "plasma", name = "LBW Prevalence (%)", 
+    geom_sf(data = state_data, aes(fill = COLUMN2), color = NA, size = 0.1) +
+    scale_fill_viridis(option = "plasma", name = "LBW Prevalence (%)", direction = -1, 
                        na.value = "grey50",
-                       guide = guide_colorbar(barwidth = 15, barheight = 0.5)) +
+                       guide = guide_colorbar(barwidth = 15, barheight = 0.5), limits = c(0, 40)) +
     labs(title = paste("Prevalence of Low Birth Weight (LBW) in", state_name),
          subtitle = "Based on NFHS Data") +
     theme_minimal() +
