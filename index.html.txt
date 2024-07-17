@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Maps</title>
+</head>
+<body>
+    <h1>Interactive Maps</h1>
+    <h2>SGA GROW Individual District Maps</h2>
+    <ul>
+        <li><a href="Interactive maps with CI/Interactive SGA GROW_individual district_map/AndhraPradeshSGAGROW_map.html">Andhra Pradesh SGA GROW Map</a></li>
+        <!-- Add more links for other states/districts -->
+    </ul>
+    <!-- Add more sections for other types of maps -->
+</body>
+</html>
