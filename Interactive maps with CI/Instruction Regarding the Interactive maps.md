@@ -22,4 +22,4 @@ In this folder, you will find a comprehensive collection of interactive maps det
   - The interactive nature of these maps makes it straightforward to understand where India stands in terms of the prevalence of LBW and SGA.
   - By hovering over different regions, users can quickly access critical data points and gain insights into regional disparities.
 
-To explore the data further, simply download the HTML files provided in this folder. These files will offer you an interactive and comprehensive view of the current state of LBW and SGA prevalence across India, aiding in research, policy-making, and public health interventions.
+To explore the data further, simply download the HTML files provided in this folder. These files will offer you an interactive and comprehensive view of the current state of LBW and SGA prevalence across India.
