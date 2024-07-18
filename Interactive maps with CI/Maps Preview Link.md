@@ -1,9 +1,10 @@
-## To view the inetractive maps please click the below link:
+## To view the Interactive Maps of Low Birth Weight (LBW) and Small for Gestational Age (SGA) in India click the below link:
+
 ## https://teenathomas98.github.io/Health-Data-Science-Project-23103862/
 
-## Interactive Maps of Low Birth Weight (LBW) and Small for Gestational Age (SGA) in India
+## What you will find in the above link? 
 
-In this folder, you will find a comprehensive collection of interactive maps detailing the prevalence of low birth weight (LBW) and small for gestational age (SGA) across various regions of India. These maps are designed to provide an in-depth visual representation of the data, allowing for easy exploration and analysis. Below is a summary of the contents and their features:
+In the link, you will find a comprehensive collection of interactive maps detailing the prevalence of low birth weight (LBW) and small for gestational age (SGA) across various regions of India. These maps are designed to provide an in-depth visual representation of the data, allowing for easy exploration and analysis. Below is a summary of the contents and their features:
 
 ### National Overview
 1. **India-Wide Maps**:
@@ -24,5 +25,3 @@ In this folder, you will find a comprehensive collection of interactive maps det
 - **Interactive Features**:
   - The interactive nature of these maps makes it straightforward to understand where India stands in terms of the prevalence of LBW and SGA.
   - By hovering over different regions, users can quickly access critical data points and gain insights into regional disparities.
-
-To explore the data further, simply download the HTML files provided in this folder. These files will offer you an interactive and comprehensive view of the current state of LBW and SGA prevalence across India.
