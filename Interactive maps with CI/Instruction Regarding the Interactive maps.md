@@ -1,5 +1,5 @@
-
-https://teenathomas98.github.io/Health-Data-Science-Project-23103862/
+## To view the inetractive maps please click the below link:
+## https://teenathomas98.github.io/Health-Data-Science-Project-23103862/
 
 ## Interactive Maps of Low Birth Weight (LBW) and Small for Gestational Age (SGA) in India
 
